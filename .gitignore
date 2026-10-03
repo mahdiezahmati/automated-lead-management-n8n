@@ -1,0 +1,29 @@
+# n8n local data
+.n8n/
+n8n_data/
+
+# Environment variables
+.env
+.env.*
+
+# Secrets
+*.secret
+secrets/
+credentials/
+
+# Database
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Backups
+*.tar.gz
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

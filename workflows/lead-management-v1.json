@@ -1,0 +1,431 @@
+{
+  "name": "Automated Lead Management &CRM Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead ",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "58dcbdb5-79f5-477e-8b2b-5874ddb172b2",
+      "name": "Webhook",
+      "webhookId": "0807e984-058d-4068-8a16-4dcd9cfa14b7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Lead received successfully\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1392,
+        32
+      ],
+      "id": "2224abcb-a293-4130-b41b-86ae943b3b72",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "65d3c5d5-633f-4dac-876d-1aef12507695",
+              "name": "body.name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ed3f56e4-e3b2-47eb-ac70-b2ffeea580ab",
+              "name": "body.email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "b7c699b1-48ad-404b-8f5e-cdfe8a451569",
+              "name": "body.phone",
+              "value": "={{ $json.body.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "794537ac-2411-47cb-a0c5-825b205595a5",
+              "name": "body.company",
+              "value": "={{ $json.body.company }}",
+              "type": "string"
+            },
+            {
+              "id": "9688e722-819d-43e3-930b-0f327f5737dc",
+              "name": "body.service",
+              "value": "={{ $json.body.service }}",
+              "type": "string"
+            },
+            {
+              "id": "e0f24377-d438-4626-8caa-1e8f2d01981e",
+              "name": "body.budget",
+              "value": "={{ $json.body.budget }}",
+              "type": "number"
+            },
+            {
+              "id": "81ed33ad-d694-4b9c-b1b0-2f96629835ee",
+              "name": "body.message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "e4781994-8e5c-4a1d-ac75-519f0bc5e701",
+              "name": "status ",
+              "value": "New",
+              "type": "string"
+            },
+            {
+              "id": "118a8b1d-a6b3-4594-8fce-5d8a8eb6ac37",
+              "name": "createdAt",
+              "value": "={{ $now }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "ed48bf0b-f9c7-4c46-b8bd-c13fe2e54ef0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5208252f-330f-4984-85fb-616543c1df9d",
+              "leftValue": "={{ $json.leadScore }}",
+              "rightValue": 70,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        752,
+        144
+      ],
+      "id": "b88b9af4-a4ec-4fb0-a6e3-c742f8248dc4",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const budget = Number($json.body?.budget ?? $json.budget ?? 0);\nconst service = $json.body?.service ?? $json.service ?? \"\";\nconst source = $json.body?.source ?? $json.source ?? \"\";\nconst message = $json.body?.message ?? $json.message ?? \"\";\n\nlet score = 0;\n\n// 1. Budget\nif (budget >= 50000000) {\n  score += 40;\n} else if (budget >= 30000000) {\n  score += 25;\n}\n\n// 2. Service\nif (service === \"AI Automation\") {\n  score += 20;\n}\n\n// 3. Lead Source\nif (source === \"Website\") {\n  score += 10;\n}\n\n// 4. Message\nif (message.trim() !== \"\") {\n  score += 10;\n}\n\n// 5. Lead Category\nlet category;\n\nif (score >= 70) {\n  category = \"Hot\";\n} else if (score >= 40) {\n  category = \"Warm\";\n} else {\n  category = \"Cold\";\n}\n\n// Final Output\nreturn {\n  json: {\n    ...$json,\n\n    // Clean lead information\n    name: $json.body?.name ?? $json.name,\n    email: $json.body?.email ?? $json.email,\n    phone: $json.body?.phone ?? $json.phone,\n    company: $json.body?.company ?? $json.company,\n    service: service,\n    budget: budget,\n    source: source,\n    message: message,\n\n    // Lead scoring\n    leadScore: score,\n    leadCategory: category\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "b3c1d0d9-94cc-4aba-ab33-85cb9080912a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "HBG73Jn0bHjj1n0r",
+          "mode": "list",
+          "cachedResultName": "lead",
+          "cachedResultUrl": "/projects/iqdXqOGBxmGle0jg/datatables/HBG73Jn0bHjj1n0r"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "phone": "={{ $json.phone }}",
+            "company": "={{ $json.company }}",
+            "service": "={{ $json.service }}",
+            "budget": "={{ $json.budget }}",
+            "source": "={{ $json.source }}",
+            "leadCategory": "={{ $json.leadCategory }}",
+            "leadScore": "={{ $json.leadScore }}",
+            "message": "={{ $json.message }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "service",
+              "displayName": "service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "leadScore",
+              "displayName": "leadScore",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "leadCategory",
+              "displayName": "leadCategory",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        64
+      ],
+      "id": "21bd9bf7-b26f-4614-8e03-cca2335c1152",
+      "name": "Insert row"
+    },
+    {
+      "parameters": {
+        "chatId": "78746108",
+        "text": "=🔥 New Lead  Name: {{ $json.name }} Company: {{ $json.company }} Service: {{ $json.service }} Budget: {{ $json.budget }} Score: {{ $json.leadScore }} Category: {{ $json.leadCategory }}  📧 {{ $json.email }} 📱 {{ $json.phone }} 🌐 Source: {{ $json.source }}  Message: {{ $json.message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        48
+      ],
+      "id": "df838fa7-bff7-4133-af18-90496e1bb34a",
+      "name": "Send a text message",
+      "webhookId": "eb32f454-8ce9-4124-829e-f1989eb73e13",
+      "credentials": {
+        "telegramApi": {
+          "id": "Hcp3kuhyJ75OAuSV",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Lead received but does not qualify as a hot lead\",\n  \"score\": \"={{ $json.leadScore }}\",\n  \"category\": \"={{ $json.leadCategory }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        976,
+        208
+      ],
+      "id": "326604a2-cc75-46f9-a907-507900520cad",
+      "name": "Non Hot Lead"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Insert row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Non Hot Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0a96d70d-047f-4a1a-965d-b1aebb9c628b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c42d927ab8343ea5d24fa179231ceafeb96c7c1ec8ed5ab86d678bd0efb1d91"
+  },
+  "nodeGroups": [],
+  "id": "ga3W0zjPIL1YepwF",
+  "tags": []
+}
